@@ -24,7 +24,9 @@ main_frame <- function(template, frame, level, up_units = NULL, res){
 
 # Box resize ----
 ## Main function ----
-box_move_and_resize <- function(boxes, x, x_target){
+box_move_and_resize <- function(boxes, x, x_target, x_target_add = TRUE){
+  
+  out <- st_sf(st_sfc())
   
   for (i in 1:nrow(boxes)){
     box <- boxes[i,]
@@ -87,10 +89,14 @@ box_move_and_resize <- function(boxes, x, x_target){
     # names order mngmt / return nothing if no territories included in the box
     if(nrow(sel) > 0){
       sel <- sel[, namesorder]
-      x_target <- rbind(x_target, sel)
+      out <- rbind(out, sel)
     }
   }
-return(x_target)
+  
+  if(x_target_add == TRUE){
+    out <- rbind(x_target, out)
+  }
+return(out)
 }
 
 
