@@ -2,24 +2,9 @@
 # European template
 #########################
 
-#devtools::install_github("riatelab/mapinsetr")
 library(sf)
 library(giscoR)
 library(mapsf)
-#library(mapinsetr)
-
-# Set frame parameters
-xmin <- 2380000
-xmax <- 6550000
-ymin <- 1350000
-ymax <- 5420000
-
-lon <- c(xmin,xmax,xmax,xmin,xmin)
-lat <- c(ymin,ymin,ymax,ymax,ymin)
-
-frame <- st_sfc(st_polygon(list(cbind(lon, lat))))
-frame <- st_as_sf(frame)
-st_crs(frame) <- 3035
 
 
 # Main frame ----
