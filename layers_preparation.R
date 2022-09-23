@@ -25,7 +25,8 @@ urban_audit <- gisco_get_urban_audit(year = "2020", epsg = "4326",
 
 
 nuts <- box_move_and_resize(boxes = boxes, x = input_nuts, x_target = nuts) 
-countries_box <- box_move_and_resize(boxes = boxes, x = input_countries, x_target = countries) 
+countries_box <- box_move_and_resize(boxes = boxes, x = input_countries,
+                                     x_target = countries, x_target_add = FALSE) 
 boxes <- box_k(boxes = boxes, x = input, x_target = nuts)
 
 mf_map(frame, col = "lightblue", border = NA)
@@ -40,3 +41,5 @@ borders <- suppressWarnings(st_intersection(st_buffer(countries, 5),
 borders <- st_cast(borders,"MULTILINESTRING")
 borders <- borders[borders$CNTR_ID != borders$CNTR_ID.1, ] 
 borders <- borders[,(1:length(countries))]
+
+

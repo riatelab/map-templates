@@ -27,6 +27,7 @@ main_frame <- function(template, frame, level, up_units = NULL, res){
 box_move_and_resize <- function(boxes, x, x_target, x_target_add = TRUE){
   
   out <- st_sf(st_sfc())
+  st_crs(out) <- st_crs(x_target)
   
   for (i in 1:nrow(boxes)){
     box <- boxes[i,]
@@ -63,7 +64,6 @@ box_move_and_resize <- function(boxes, x, x_target, x_target_add = TRUE){
     # Move to the center of the box
     xy <- suppressWarnings(st_centroid(box))
     xy <- st_bbox(xy)[1:2]
-    
     cntrd <- st_centroid(st_combine(sel))
     xg <- (st_geometry(sel) - cntrd) + cntrd[[1]][] 
     st_geometry(sel) <- xg + xy - (st_bbox(st_centroid(xg))[1:2])
