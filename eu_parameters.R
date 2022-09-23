@@ -140,5 +140,5 @@ boxes$target <- list(c(-61.89, 15.8, -61.15, 16.55), #xmin, ymin, xmax, ymax
                      
 boxes$epsg_loc <- c(5490, 5490, 2975, 2972, 4471, 3035, 2191, 3063, 3063)
 st_geometry(boxes) <- "geometry"
-rm(list=setdiff(ls(), "boxes"))
+rm(list=ls()[! ls() %in% c("boxes","frame")])
 ls()
