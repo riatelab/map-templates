@@ -18,15 +18,7 @@ main_frame <- function(template, frame, level, up_units = NULL, res){
     countries <- suppressWarnings(st_intersection(neighbours, st_geometry(frame)))
     urban_audit <- suppressWarnings(st_intersection(urban_audit, st_geometry(frame)))
     
-    # Get borders
-    borders <- suppressWarnings(st_intersection(st_buffer(countries, 5), 
-                                                st_buffer(countries, 5))) 
-    borders <- st_cast(borders,"MULTILINESTRING")
-    borders <- borders[borders$CNTR_ID != borders$CNTR_ID.1, ] 
-    borders <- borders[,(1:length(countries))]
-    
-    return(list("units" = nuts, "neighbours" = countries, "borders" = borders,
-           "cities" = urban_audit))
+    return(list("units" = nuts, "neighbours" = countries, "cities" = urban_audit))
   }
 }  
 
