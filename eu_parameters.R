@@ -124,7 +124,7 @@ xx <- st_sfc(st_polygon(list(cbind(lon, lat))))
 xx <- st_as_sf(xx)
 xx$id <- 9
 xx$name <- "Açores (Florès - PT)"
-boxes <- rbind(x, xx)
+boxes <- rbind(boxes, xx)
 
 
 # Set input parameters of box (target in WGS84, local EPSG)
