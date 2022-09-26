@@ -22,6 +22,20 @@ main_frame <- function(template, frame, level, up_units = NULL, res){
   }
 }  
 
+i <- 4
+mf_map(boxes[4,])
+head(sel)
+head(cntrd)
+head(xg)
+mf_map(sel, col = NA, border = "red", add = TRUE)
+mf_map(st_centroid(st_combine(sel)), add = TRUE)
+mf_map(st_centroid(boxes[4,]), add = TRUE, col = "green")
+mf_map(xg)
+mf_map(cntrd, add = TRUE)
+cntrd <- st_transform(cntrd, 3035)
+mf_map(sel)
+mf_map(cntrd, add = T)
+
 # Box resize ----
 ## Main function ----
 box_move_and_resize <- function(boxes, x, x_target, x_target_add = TRUE){
@@ -66,23 +80,23 @@ box_move_and_resize <- function(boxes, x, x_target, x_target_add = TRUE){
     xy <- st_bbox(xy)[1:2]
     cntrd <- st_centroid(st_combine(sel))
     xg <- (st_geometry(sel) - cntrd) + cntrd[[1]][] 
-    st_geometry(sel) <- xg + xy - (st_bbox(st_centroid(xg))[1:2])
+    st_geometry(sel) <- xg + xy - (st_centroid(st_combine(xg)))
     
     # Resize
     bbox_ref <- st_bbox(box) # Bbox in the template
     bbox_input <- st_bbox(sel[1,]) # Bbox of the selection
-    
+ 
     x_dif <- (bbox_ref[3] - bbox_ref[1]) / (bbox_input[3] - bbox_input[1]) # Diff in X  
     y_dif <- (bbox_ref[4] - bbox_ref[2]) / (bbox_input[4] - bbox_input[2]) # diff in Y   
     k_min <- min(x_dif, y_dif) # Target resize ratio
     
     cntrd <- st_centroid(st_combine(sel))
     xg <- (st_geometry(sel) - cntrd) * k_min + cntrd[[1]][] 
-    st_geometry(sel) <- xg + xy - (st_bbox(st_centroid(xg))[1:2])
+    st_geometry(sel) <- xg + xy - (st_centroid(st_combine(xg)))
     
     # get rid of mask
     sel <- sel[-1,]
-    
+    head(sel)
     if (cp){sel <- st_cast(sel, "MULTIPOLYGON")}
     st_crs(sel) <- st_crs(x_target)
     
