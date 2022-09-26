@@ -22,19 +22,6 @@ main_frame <- function(template, frame, level, up_units = NULL, res){
   }
 }  
 
-i <- 4
-mf_map(boxes[4,])
-head(sel)
-head(cntrd)
-head(xg)
-mf_map(sel, col = NA, border = "red", add = TRUE)
-mf_map(st_centroid(st_combine(sel)), add = TRUE)
-mf_map(st_centroid(boxes[4,]), add = TRUE, col = "green")
-mf_map(xg)
-mf_map(cntrd, add = TRUE)
-cntrd <- st_transform(cntrd, 3035)
-mf_map(sel)
-mf_map(cntrd, add = T)
 
 # Box resize ----
 ## Main function ----
@@ -93,6 +80,7 @@ box_move_and_resize <- function(boxes, x, x_target, x_target_add = TRUE){
     cntrd <- st_centroid(st_combine(sel))
     xg <- (st_geometry(sel) - cntrd) * k_min + cntrd[[1]][] 
     st_geometry(sel) <- xg + xy - (st_centroid(st_combine(xg)))
+    
     
     # get rid of mask
     sel <- sel[-1,]
