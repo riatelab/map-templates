@@ -32,8 +32,9 @@ boxes <- box_k(boxes = boxes, x = input_nuts, x_target = nuts)
 mf_map(frame, col = "lightblue", border = NA)
 mf_map(countries, col = "lightgrey", border = "white", add = TRUE)
 mf_map(boxes, col = "lightblue", border = "black", add = TRUE)
-mf_map(nuts, col = "peachpuff", border = "white", lwd = .25, add = TRUE)
 mf_map(countries_box, col = "lightgrey", border = "white", add = TRUE)
+mf_map(nuts, col = "peachpuff", border = "white", lwd = .25, add = TRUE)
+
 
 # Extracti borders
 borders <- suppressWarnings(st_intersection(st_buffer(countries, 5), 

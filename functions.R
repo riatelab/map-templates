@@ -39,6 +39,7 @@ box_move_and_resize <- function(boxes, x, x_target, x_target_add = TRUE){
     mask <- st_sfc(st_polygon(list(cbind(lon, lat))))
     st_crs(mask) <- st_crs(x)
     
+    
     # if pts 
     if (class(st_geometry(x))[1]=="sfc_POINT"){
       x <- ptbox_move_and_resize(x = x, mask = mask, xy = xy, prj = prj, k = k)
@@ -79,12 +80,10 @@ box_move_and_resize <- function(boxes, x, x_target, x_target_add = TRUE){
     
     cntrd <- st_centroid(st_combine(sel))
     xg <- (st_geometry(sel) - cntrd) * k_min + cntrd[[1]][] 
-    st_geometry(sel) <- xg + xy - (st_centroid(st_combine(xg)))
-    
+    st_geometry(sel) <- xg - (st_bbox(xg)[1:2] - st_bbox(box)[1:2])
     
     # get rid of mask
     sel <- sel[-1,]
-    head(sel)
     if (cp){sel <- st_cast(sel, "MULTIPOLYGON")}
     st_crs(sel) <- st_crs(x_target)
     
