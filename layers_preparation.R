@@ -27,13 +27,20 @@ urban_audit <- gisco_get_urban_audit(year = "2020", epsg = "4326",
 nuts <- box_move_and_resize(boxes = boxes, x = input_nuts, x_target = nuts) 
 countries_box <- box_move_and_resize(boxes = boxes, x = input_countries,
                                      x_target = countries, x_target_add = FALSE) 
+cities <- box_move_and_resize(boxes = boxes, x = urban_audit, x_target = cities)
 boxes <- box_k(boxes = boxes, x = input_nuts, x_target = nuts)
+
+head(cities)
 
 mf_map(frame, col = "lightblue", border = NA)
 mf_map(countries, col = "lightgrey", border = "white", add = TRUE)
-mf_map(boxes, col = "lightblue", border = "black", add = TRUE)
-mf_map(countries_box, col = "lightgrey", border = "white", add = TRUE)
+mf_map(boxes, col = "lightblue", border = NA, add = TRUE)
+mf_map(countries_box, col = "lightgrey", border = NA, add = TRUE)
 mf_map(nuts, col = "peachpuff", border = "white", lwd = .25, add = TRUE)
+mf_map(cities, col = "red", pch = 21, cex = .8, add = TRUE)
+
+head(cities)
+mf_map(boxes, col = NA, border = "black", add = TRUE)
 
 
 # Extracti borders
