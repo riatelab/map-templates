@@ -27,3 +27,5 @@ Copyright ©EuroGeographics for the administrative boundaries ; (cc) RIATE for m
 - POP : Total population
 - POP_YEAR : Reference year for the total population
 - DENS : Population density (inh. per sq. km, POP/AREA)
+
+![](fig/eu_template.png)
