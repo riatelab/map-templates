@@ -1,0 +1,16 @@
+{
+"type": "FeatureCollection",
+"name": "boxes",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::3035" } },
+"features": [
+{ "type": "Feature", "properties": { "id": 1.0, "name": "Canaries (ES)", "epsg_loc": 3035.0 }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 5900000.0, 4820000.0 ], [ 6503000.0, 4820000.0 ], [ 6503000.0, 5100000.0 ], [ 5900000.0, 5100000.0 ], [ 5900000.0, 4820000.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": 2.0, "name": "Madeire (PT)", "epsg_loc": 2191.0 }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 5900000.0, 4497000.0 ], [ 6180000.0, 4497000.0 ], [ 6180000.0, 4777000.0 ], [ 5900000.0, 4777000.0 ], [ 5900000.0, 4497000.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": 3.0, "name": "Açores (PT)", "epsg_loc": 3063.0 }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 6223000.0, 4497000.0 ], [ 6503000.0, 4497000.0 ], [ 6503000.0, 4777000.0 ], [ 6223000.0, 4777000.0 ], [ 6223000.0, 4497000.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": 4.0, "name": "Açores (Florès - PT)", "epsg_loc": 3063.0 }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 6223000.0, 4693000.0 ], [ 6307000.0, 4693000.0 ], [ 6307000.0, 4777000.0 ], [ 6223000.0, 4777000.0 ], [ 6223000.0, 4693000.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": 5.0, "name": "Guadeloupe (FR)", "epsg_loc": 5490.0 }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 5900000.0, 4174000.0 ], [ 6180000.0, 4174000.0 ], [ 6180000.0, 4454000.0 ], [ 5900000.0, 4454000.0 ], [ 5900000.0, 4174000.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": 6.0, "name": "Martinique (FR)", "epsg_loc": 5490.0 }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 6223000.0, 4174000.0 ], [ 6503000.0, 4174000.0 ], [ 6503000.0, 4454000.0 ], [ 6223000.0, 4454000.0 ], [ 6223000.0, 4174000.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": 7.0, "name": "Réunion (FR)", "epsg_loc": 2975.0 }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 5900000.0, 3851000.0 ], [ 6180000.0, 3851000.0 ], [ 6180000.0, 4131000.0 ], [ 5900000.0, 4131000.0 ], [ 5900000.0, 3851000.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": 8.0, "name": "Guyane (FR)", "epsg_loc": 2972.0 }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 6223000.0, 3851000.0 ], [ 6503000.0, 3851000.0 ], [ 6503000.0, 4131000.0 ], [ 6223000.0, 4131000.0 ], [ 6223000.0, 3851000.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": 9.0, "name": "Mayotte (FR)", "epsg_loc": 4471.0 }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 6040000.0, 3528000.0 ], [ 6320000.0, 3528000.0 ], [ 6320000.0, 3808000.0 ], [ 6040000.0, 3808000.0 ], [ 6040000.0, 3528000.0 ] ] ] } }
+]
+}
