@@ -148,7 +148,6 @@ df[,(length(df))] <- ifelse(is.na(df[,(length(df))]), df[,(length(df)-2)], df[,(
 
 nuts3 <- merge(nuts3, df[,c("POP_geo", "POP_2021")], by.x = "NUTS_ID", by.y = "POP_geo", all.x = TRUE)
 nuts2 <- merge(nuts2, df[,c("POP_geo", "POP_2021")], by.x = "NUTS_ID", by.y = "POP_geo", all.x = TRUE)
-head(nuts3)
 varsel <- c("NUTS_ID", "NAME_LATN", "URBN_TYPE", "MOUNT_TYPE", "COAST_TYPE", "POP_2021", "AREA_2021") 
 nuts3 <- nuts3[,varsel]
 nuts2 <- nuts2[,varsel]
@@ -190,7 +189,7 @@ df <- merge(df, tmp[,c("cities", "POP_YEAR")], by = "cities", all.x = TRUE)
 df$POP <- as.numeric(df$POP)
 fua <- merge(fua, df[,c("cities", "POP", "POP_YEAR")], by.x = "URAU_CODE", by.y = "cities", all.x = TRUE)
 fua$DENS <- fua$POP / fua$AREA
-
+head(fua)
 boxes$target <- NULL
 
 # Export layers

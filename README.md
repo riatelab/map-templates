@@ -6,8 +6,8 @@ R programmes to build map templates for Magrit (with boxes for overseas and oute
 Map templates created with the sf, giscoR, mapinsetr R packages
 Copyright ©EuroGeographics for the administrative boundaries ; (cc) RIATE for map template
 
-NUTS2-3 Statistical attributes
-NUTS2 and NUTS3 layers fed by GISCO attributes and Eurostat data (total area and total population, from eurostat R package)
+### NUTS2-3 (version 2020) layers attributes
+
 - NUTS_ID : NUTS id code
 - NAME_LATIN : NUTS name in local language, transliterated to Latin script
 - URBN_TYPE : Urban-rural typology for NUTS3 regions (1: predominantly urban regio ; 2: intermediate region; 3 predominantly rural
@@ -17,3 +17,13 @@ NUTS2 and NUTS3 layers fed by GISCO attributes and Eurostat data (total area and
 - AREA_2021 : Total area in 2021 (or 2019-2020 if missing values, Eurostat table *reg_area3*)
 - POP_2021 : Total population in 2021 (or 2019-2020 if missing values, Eurostat table *demo_r_pjanaggr3*)
 - DENS_2021 : Population density (inh. per sq. km, POP_2021 / AREA_2021). 
+
+### Functional Urban Areas and cities (version 2021) layers attributes
+
+- URAU_CODE : FUA or city code
+- URAU_NAME : FUA or city name
+- CITY_CPTL : Is a capital ? (Y: yes)
+- AREA : Total area in square kilometers
+- POP : Total population
+- POP_YEAR : Reference year for the total population
+- DENS : Population density (inh. per sq. km, POP/AREA)
