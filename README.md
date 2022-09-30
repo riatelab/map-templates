@@ -4,7 +4,11 @@ R programmes to build map templates for Magrit (with boxes for overseas and oute
 
 ## Europe template
 Map templates created with the sf, giscoR, mapinsetr R packages
-Copyright ©EuroGeographics for the administrative boundaries ; (cc) RIATE for map template
+Copyright ©EuroGeographics for the administrative boundaries ; (cc) RIATE for map template.
+
+Overseas territories (Canarias, Madeire, Açores, Guadeloupe, Martinique, Réunion, Guyane and Mayotte) are reprojected, moved and resized to appear on the main map in specific boxes. 
+
+All the layers are in geojson format, in latitude/longitude (WGS84). To be correctly displayed, they need to be transformed in the European reference projection (ETRS89/LAEA Europe, EPSG:3035).
 
 ![](fig/eu_template.png)
 
@@ -30,6 +34,10 @@ Copyright ©EuroGeographics for the administrative boundaries ; (cc) RIATE for m
 - POP_YEAR : Reference year for the total population
 - DENS : Population density (inh. per sq. km, POP/AREA)
 
+
+### Additional layers
+
+This map template is built with several layout layers : world countries (main map and in boxes), world boundaries (main map and in boxes) and boxes. 
 
 ### Example with data
 
