@@ -6,6 +6,8 @@ R programmes to build map templates for Magrit (with boxes for overseas and oute
 Map templates created with the sf, giscoR, mapinsetr R packages
 Copyright ©EuroGeographics for the administrative boundaries ; (cc) RIATE for map template
 
+![](fig/eu_template.png)
+
 ### NUTS2-3 (version 2020) layers attributes
 
 - NUTS_ID : NUTS id code
@@ -28,4 +30,7 @@ Copyright ©EuroGeographics for the administrative boundaries ; (cc) RIATE for m
 - POP_YEAR : Reference year for the total population
 - DENS : Population density (inh. per sq. km, POP/AREA)
 
-![](fig/eu_template.png)
+
+### Example with data
+
+![](fig/eu_template_ex.png)
