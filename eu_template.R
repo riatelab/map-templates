@@ -4,74 +4,66 @@
 library(sf)
 library(giscoR)
 library(mapsf)
-#devtools::install_github("riatelab/mapinsetr")
+#devtools::install_github("riatelab/mapinsetr", force = TRUE)
 library(mapinsetr)
-
 source('eu_parameters.R')
-head(frame)
-# Import last version of cities
+
+# Delete outermost territories
+outer <- function(x, var){
+  x$NUTS1 <- substr(x[[var]], 1, 3)
+  outermost <- c("FRY", "PT2", "PT3", "ES7")
+  x <- x[!x$NUTS1 %in% outermost,]
+  x$NUTS1 <- NULL
+  x <- x[!is.na(x[[var]]),]
+  return(x)
+} 
+
+# Import layers ----
+nuts3 <- gisco_get_nuts(year = "2021", epsg = "3035", resolution = "20", 
+                        nuts_level = "3")
+nuts3 <- outer(x = nuts3, var = "FID") 
+nuts2 <- gisco_get_nuts(year = "2021", epsg = "3035", resolution = "20", 
+                        nuts_level = "2")
+nuts2 <- outer(x = nuts2, var = "FID") 
+
 cities <- st_read("input/eu/URAU_LB_2021_4326_CITIES.geojson")
 fua <- st_read("input/eu/URAU_LB_2021_4326_FUA.geojson")
 urban_audit <- rbind(cities, fua)
 urban_audit <- st_transform(urban_audit, 3035)
+urban_audit <- outer(x = urban_audit, var = "NUTS3_2021") 
+countries <- gisco_get_countries(year = "2020", epsg = "3035", resolution = "20")
 
-# Main frame ----
-main_frame <- function(template, frame, level, up_units = NULL, res){
-  if(template == "europe"){
-    units <- gisco_get_nuts(year = "2021", epsg = "3035", resolution = res, 
-                            nuts_level = level)
-    
-    neighbours <- gisco_get_countries(year = "2020", epsg = "3035", 
-                                      resolution = res)
-    
-    
-    nuts <- suppressWarnings(st_intersection(units, st_geometry(frame)))
-    countries <- suppressWarnings(st_intersection(neighbours, st_geometry(frame)))
-    urban_audit <- suppressWarnings(st_intersection(urban_audit, st_geometry(frame)))
-    
-    return(list("units" = nuts, "neighbours" = countries, "cities" = urban_audit))
-  }
-}  
-
-
-# Europe ----
-## Main frame ----
-europe <- main_frame(template = "europe", frame = frame, level = "2", res = "20")
-
-nuts2 <- europe$units
-countries <- europe$neighbours
-cities <- europe$cities
-europe <- main_frame(template = "europe", frame = frame, level = "3", res = "20")
-nuts3 <- europe$units
-
-## Create mask polygon from input parameters ----
+# Create mask polygon from input parameters ----
 # NUTS 3
-input_nuts <- gisco_get_nuts(year = "2021", epsg = "4326", resolution = "20", nuts_level = "3")
+input <- gisco_get_nuts(year = "2021", epsg = "3035", resolution = "20", nuts_level = "3")
+input <- st_cast(input, "MULTIPOLYGON")
 for (i in 1 : nrow(boxes)){
   box <- boxes[i,]
-  lon <- as.vector(unlist(box[,"target"])[c(1,3,3,1,1)])
-  lat <- as.vector(unlist(box[,"target"])[c(2,2,4,4,2)])
-  mask <- st_sfc(st_polygon(list(cbind(lon, lat))))
-  st_crs(mask) <- 4326
+  bb <- as.vector(unlist(box[,"target"]))
+  bb <- c(xmin = bb[1], ymin = bb[2], xmax = bb[3], ymax = bb[4])
+  mask <- st_as_sfc(st_bbox(bb, crs = 4326))
   mask <- st_transform(mask, box[,"epsg_loc", drop = T][1])
-  input <- st_transform(input_nuts, box[,"epsg_loc", drop = T][1])
-  inset <- m_r(x = input, mask = mask,  y = box, verbose = TRUE)
+  input <- st_transform(input, box[,"epsg_loc", drop = T][1])
+  inset <- m_r(x = input, mask = mask,  y = box)
   nuts3 <- rbind(nuts3, inset)
 }
+nuts3 <- st_transform(nuts3, 4326)
 
 # NUTS 2
-input_nuts <- gisco_get_nuts(year = "2021", epsg = "4326", resolution = "20", nuts_level = "2")
+input <- gisco_get_nuts(year = "2021", epsg = "3035", resolution = "20", nuts_level = "2")
+input <- st_cast(input, "MULTIPOLYGON")
+
 for (i in 1 : nrow(boxes)){
   box <- boxes[i,]
-  lon <- as.vector(unlist(box[,"target"])[c(1,3,3,1,1)])
-  lat <- as.vector(unlist(box[,"target"])[c(2,2,4,4,2)])
-  mask <- st_sfc(st_polygon(list(cbind(lon, lat))))
-  st_crs(mask) <- 4326
+  bb <- as.vector(unlist(box[,"target"]))
+  bb <- c(xmin = bb[1], ymin = bb[2], xmax = bb[3], ymax = bb[4])
+  mask <- st_as_sfc(st_bbox(bb, crs = 4326))
   mask <- st_transform(mask, box[,"epsg_loc", drop = T][1])
-  input <- st_transform(input_nuts, box[,"epsg_loc", drop = T][1])
-  inset <- m_r(x = input, mask = mask,  y = box, verbose = TRUE)
+  input <- st_transform(input, box[,"epsg_loc", drop = T][1])
+  inset <- m_r(x = input, mask = mask,  y = box)
   nuts2 <- rbind(nuts2, inset)
 }
+nuts2 <- st_transform(nuts2, 4326)
 
 # NEIGHBOURING TERRITORIES IN THE BOW
 input_countries <- gisco_get_countries(year = "2020", epsg = "3035", resolution = "20")
@@ -80,54 +72,58 @@ st_crs(country_box) <- st_crs(frame)
 
 for (i in 1 : nrow(boxes)){
   box <- boxes[i,]
-  lon <- as.vector(unlist(box[,"target"])[c(1,3,3,1,1)])
-  lat <- as.vector(unlist(box[,"target"])[c(2,2,4,4,2)])
-  mask <- st_sfc(st_polygon(list(cbind(lon, lat))))
-  st_crs(mask) <- 4326
+  bb <- as.vector(unlist(box[,"target"]))
+  bb <- c(xmin = bb[1], ymin = bb[2], xmax = bb[3], ymax = bb[4])
+  mask <- st_as_sfc(st_bbox(bb, crs = 4326))
   mask_large <- st_transform(mask, 3035)
   mask_large <- st_as_sfc(st_bbox(mask_large + c(-500000,-500000,500000,500000), crs = 3035))
   st_crs(mask_large) <- 3035
   input <- suppressWarnings(st_intersection(input_countries, mask_large))
+  input <- st_cast(input, "MULTIPOLYGON")
   mask <- st_transform(mask, box[,"epsg_loc", drop = T][1])
   input <- st_transform(input, box[,"epsg_loc", drop = T][1])
-  inset <- m_r(x = input, mask = mask,  y = box, verbose = TRUE)
+  inset <- m_r(x = input, mask = mask,  y = box)
   if(nrow(inset) > 0){
   country_box <- rbind(country_box, inset)
   }
 }
+country_box <- st_transform(country_box, 4326)
 
 # URBAN AUDIT
-urban_audit <- st_transform(urban_audit, 4326)
-
 for (i in 1 : nrow(boxes)){
   box <- boxes[i,]
-  lon <- as.vector(unlist(box[,"target"])[c(1,3,3,1,1)])
-  lat <- as.vector(unlist(box[,"target"])[c(2,2,4,4,2)])
-  mask <- st_sfc(st_polygon(list(cbind(lon, lat))))
-  st_crs(mask) <- 4326
+  bb <- as.vector(unlist(box[,"target"]))
+  bb <- c(xmin = bb[1], ymin = bb[2], xmax = bb[3], ymax = bb[4])
+  mask <- st_as_sfc(st_bbox(bb, crs = 4326))
   mask <- st_transform(mask, box[,"epsg_loc", drop = T][1])
   input <- st_transform(urban_audit, box[,"epsg_loc", drop = T][1])
-  inset <- m_r(x = input, mask = mask,  y = box, verbose = TRUE)
+  inset <- m_r(x = urban_audit, mask = mask,  y = box)
   cities <- rbind(cities, inset)
 }
 
 # Extraction borders
-borders <- suppressWarnings(st_intersection(st_buffer(countries, 5), 
-                                            st_buffer(countries, 5))) 
+borders <- suppressWarnings(st_intersection(st_buffer(countries, 10), 
+                                            st_buffer(countries, 10))) 
 borders <- st_cast(borders,"MULTILINESTRING")
 borders <- borders[borders$CNTR_ID != borders$CNTR_ID.1, ] 
 borders <- borders[,(1:length(countries))]
-borders_box <- suppressWarnings(st_intersection(st_buffer(country_box, 5), 
-                                            st_buffer(country_box, 5))) 
+
+bb <- c(xmin = 2815000, ymin = -318700, xmax = 8150000, ymax = 5248200)
+mask <- st_as_sfc(st_bbox(bb, crs = 3035))
+borders <- st_intersection(borders, mask)
+
+borders_box <- suppressWarnings(st_intersection(st_buffer(country_box, 10), 
+                                            st_buffer(country_box, 10))) 
 borders_box <- st_cast(borders_box,"MULTILINESTRING")
 borders_box <- borders_box[borders_box$CNTR_ID != borders_box$CNTR_ID.1, ] 
 borders_box <- borders_box[,(1:length(country_box))]
+borders <- st_transform(borders, 4326)
+borders_box <- st_transform(borders_box, 4326)
 
 # Feed regional layers with Eurostat data (POP * AREA) ----
 library(eurostat)
 library(reshape2)
 df <- get_eurostat("reg_area3", time_format = "num") # Telecharger la table ESTAT
-levels(as.factor(df$landuse))
 df <- df[df$landuse == "TOTAL",]
 df <- dcast(df, geo ~ time, value.var = "values") # Redimensionnement de la table au format geo * time
 colnames(df) <- paste0("AREA_", colnames(df))
@@ -136,7 +132,6 @@ df[,(length(df))] <- ifelse(is.na(df[,(length(df))]), df[,(length(df)-2)], df[,(
 
 nuts3 <- merge(nuts3, df[,c("AREA_geo", "AREA_2021")], by.x = "NUTS_ID", by.y = "AREA_geo", all.x = TRUE)
 nuts2 <- merge(nuts2, df[,c("AREA_geo", "AREA_2021")], by.x = "NUTS_ID", by.y = "AREA_geo", all.x = TRUE)
-
 
 df <- get_eurostat("demo_r_pjanaggr3", time_format = "num") 
 df <- df[df$sex == "T",]
@@ -154,6 +149,10 @@ nuts2 <- nuts2[,varsel]
 
 nuts3$DENS_2021 <- nuts3$POP_2021 / nuts3$AREA_2021
 nuts2$DENS_2021 <- nuts2$POP_2021 / nuts2$AREA_2021
+
+# Tranform into character
+nuts3[3:5] <- sapply(nuts3[3:5],as.character)
+nuts2[3:5] <- sapply(nuts2[3:5],as.character)
 
 # Feed city layers with Eurostat data (POP * AREA) ----
 ## Clean city layer
@@ -189,21 +188,20 @@ df <- merge(df, tmp[,c("cities", "POP_YEAR")], by = "cities", all.x = TRUE)
 df$POP <- as.numeric(df$POP)
 fua <- merge(fua, df[,c("cities", "POP", "POP_YEAR")], by.x = "URAU_CODE", by.y = "cities", all.x = TRUE)
 fua$DENS <- fua$POP / fua$AREA
-head(fua)
 boxes$target <- NULL
+boxes <- st_transform(boxes, 3035)
+countries <- st_transform(countries, 4326)
 
 # Export layers
-st_write(frame, "output/europe/frame.shp", options = "ENCODING=UTF-8", delete_layer = TRUE)
 st_write(countries, "output/europe/countries.geojson", options = "ENCODING=UTF-8", delete_layer = TRUE)
-st_write(boxes, "output/europe/boxes.geojson", delete_layer = TRUE)
+st_write(boxes, "output/europe/boxes6.geojson", delete_layer = TRUE)
 st_write(country_box, "output/europe/country_boxes.geojson", options = "ENCODING=UTF-8", delete_layer = TRUE)
 st_write(borders, "output/europe/borders.geojson", delete_layer = TRUE)
 st_write(borders_box, "output/europe/borders_boxes.geojson", options = "ENCODING=UTF-8", delete_layer = TRUE)
 st_write(nuts2, "output/europe/nuts2.geojson", delete_layer = TRUE)
-st_write(nuts3, "output/europe/nuts3 .geojson", options = "ENCODING=UTF-8", delete_layer = TRUE)
+st_write(nuts3, "output/europe/nuts3.geojson", options = "ENCODING=UTF-8", delete_layer = TRUE)
 st_write(cities, "output/europe/cities.geojson", delete_layer = TRUE)
-st_write(fua, "output/europe/fua .geojson", options = "ENCODING=UTF-8", delete_layer = TRUE)
-
+st_write(fua, "output/europe/fua.geojson", options = "ENCODING=UTF-8", delete_layer = TRUE)
 
 # Check layers
 mf_map(frame, col = "lightblue", border = NA)

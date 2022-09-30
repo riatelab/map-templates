@@ -30,10 +30,8 @@ xmin <- x_min
 xmax <- xmin + (box_area * 2) + box_space
 ymax <- y_max
 ymin <- ymax - box_area
-
-lon <- c(xmin,xmax,xmax,xmin,xmin)
-lat <- c(ymin,ymin,ymax,ymax,ymin)
-boxes <- st_sfc(st_polygon(list(cbind(lon, lat))))
+bb <- c(xmin = xmin, ymin = ymin, xmax = xmax, ymax = ymax)
+boxes <- st_as_sfc(st_bbox(bb, crs = 3035))
 boxes <- st_as_sf(boxes)
 boxes$id <- 1
 boxes$name <- "Canaries (ES)"
@@ -43,9 +41,8 @@ xmin <- x_min
 xmax <- xmin + box_area
 ymax <- ymin - box_space
 ymin <- ymax - box_area
-lon <- c(xmin,xmax,xmax,xmin,xmin)
-lat <- c(ymin,ymin,ymax,ymax,ymin)
-xx <- st_sfc(st_polygon(list(cbind(lon, lat))))
+bb <- c(xmin = xmin, ymin = ymin, xmax = xmax, ymax = ymax)
+xx <- st_as_sfc(st_bbox(bb, crs = 3035))
 xx <- st_as_sf(xx)
 xx$id <- 2
 xx$name <- "Madeire (PT)"
@@ -54,8 +51,8 @@ boxes <- rbind(boxes, xx)
 ## Açores (main) ----
 xmin <- xmax + box_space
 xmax <- xmin + box_area
-lon <-  c(xmin,xmax,xmax,xmin,xmin)
-xx <- st_sfc(st_polygon(list(cbind(lon, lat))))
+bb <- c(xmin = xmin, ymin = ymin, xmax = xmax, ymax = ymax)
+xx <- st_as_sfc(st_bbox(bb, crs = 3035))
 xx <- st_as_sf(xx)
 xx$id <- 3
 xx$name <- "Açores (PT)"
@@ -64,9 +61,8 @@ boxes <- rbind(boxes, xx)
 ## Açores (second) ----
 xmax <- xmin + (.3 * (xmax - xmin))
 ymin2 <- ymax - (.3 * (ymax - ymin))
-lon <- c(xmin,xmax,xmax,xmin,xmin)
-lat <- c(ymin2,ymin2,ymax,ymax,ymin2)
-xx <- st_sfc(st_polygon(list(cbind(lon, lat))))
+bb <- c(xmin = xmin, ymin = ymin2, xmax = xmax, ymax = ymax)
+xx <- st_as_sfc(st_bbox(bb, crs = 3035))
 xx <- st_as_sf(xx)
 xx$id <- 4
 xx$name <- "Açores (Florès - PT)"
@@ -78,9 +74,8 @@ xmin <- x_min
 xmax <- xmin + box_area
 ymax <- ymin - box_space
 ymin <- ymax - box_area
-lon <- c(xmin,xmax,xmax,xmin,xmin)
-lat <- c(ymin,ymin,ymax,ymax,ymin)
-xx <- st_sfc(st_polygon(list(cbind(lon, lat))))
+bb <- c(xmin = xmin, ymin = ymin, xmax = xmax, ymax = ymax)
+xx <- st_as_sfc(st_bbox(bb, crs = 3035))
 xx <- st_as_sf(xx)
 xx$id <- 5
 xx$name <- "Guadeloupe (FR)"
@@ -89,8 +84,8 @@ boxes <- rbind(boxes, xx)
 ## Martinique ----
 xmin <- xmax + box_space
 xmax <- xmin + box_area 
-lon <-  c(xmin,xmax,xmax,xmin,xmin)
-xx <- st_sfc(st_polygon(list(cbind(lon, lat))))
+bb <- c(xmin = xmin, ymin = ymin, xmax = xmax, ymax = ymax)
+xx <- st_as_sfc(st_bbox(bb, crs = 3035))
 xx <- st_as_sf(xx)
 xx$id <- 6
 xx$name <- "Martinique (FR)"
@@ -101,9 +96,8 @@ xmin <- x_min
 xmax <- xmin + box_area
 ymax <- ymin - box_space
 ymin <- ymax - box_area
-lon <- c(xmin,xmax,xmax,xmin,xmin)
-lat <- c(ymin,ymin,ymax,ymax,ymin)
-xx <- st_sfc(st_polygon(list(cbind(lon, lat))))
+bb <- c(xmin = xmin, ymin = ymin, xmax = xmax, ymax = ymax)
+xx <- st_as_sfc(st_bbox(bb, crs = 3035))
 xx <- st_as_sf(xx)
 xx$id <- 7
 xx$name <- "Réunion (FR)"
@@ -112,8 +106,8 @@ boxes <- rbind(boxes, xx)
 ## Guyane ----
 xmin <- xmax + box_space
 xmax <- xmin + box_area
-lon <-  c(xmin,xmax,xmax,xmin,xmin)
-xx <- st_sfc(st_polygon(list(cbind(lon, lat))))
+bb <- c(xmin = xmin, ymin = ymin, xmax = xmax, ymax = ymax)
+xx <- st_as_sfc(st_bbox(bb, crs = 3035))
 xx <- st_as_sf(xx)
 xx$id <- 8
 xx$name <- "Guyane (FR)"
@@ -124,15 +118,12 @@ xmin <- x_min + (box_area / 2)
 xmax <- xmin + box_area
 ymax <- ymin - box_space
 ymin <- ymax - box_area
-lon <- c(xmin,xmax,xmax,xmin,xmin)
-lat <- c(ymin,ymin,ymax,ymax,ymin)
-xx <- st_sfc(st_polygon(list(cbind(lon, lat))))
+bb <- c(xmin = xmin, ymin = ymin, xmax = xmax, ymax = ymax)
+xx <- st_as_sfc(st_bbox(bb, crs = 3035))
 xx <- st_as_sf(xx)
 xx$id <- 9
 xx$name <- "Mayotte (FR)"
 boxes <- rbind(boxes, xx)
-
-
 
 # Set input parameters of box (target in WGS84, local EPSG)
 boxes$target <- list(c(-18.4, 27.4,- 13.3, 29.5),
