@@ -34,3 +34,4 @@ Copyright ©EuroGeographics for the administrative boundaries ; (cc) RIATE for m
 ### Example with data
 
 ![](fig/eu_template_ex.png)
+It is possible to enlarge the map frame if needed (if the legend overlaps with territorial units, namely).
