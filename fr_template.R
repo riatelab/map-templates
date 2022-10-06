@@ -4,6 +4,9 @@
 
 library(sf)
 library(mapsf)
+library(rnaturalearthdata)
+library(rmapshaper)
+remotes::install_github("ropensci/rnaturalearthhires")
 
 
 # 1 - Source 1 : Municipalités (centroides) ----
@@ -24,7 +27,6 @@ colnames(arr)[4] <- "INSEE_COM"
 arr <- st_centroid(arr)
 arr$INSEE_DEP <- substr(arr$INSEE_COM, 1, 2)
 
-head(arr)
 
 var <- c("INSEE_COM", "NOM", "POPULATION", "SUPERFICIE", "INSEE_DEP", "SIREN_EPCI")
 com <- rbind(com[,var], arr[,var])
@@ -35,11 +37,14 @@ com <- com[order(com$INSEE_COM),]
 
 
 # 2 - Masque de destination : Natural Earth ----
-countries <- st_read("input/fr/ne_10m_admin_0_countries.shp")
-countries <- countries[,c("ADM0_ISO", "NAME_FR")]
+countries <- ne_countries(scale = 10, returnclass = "sf")
+countries <- ms_simplify(countries, keep = .4)
+countries <- countries[,c("adm0_a3", "name")]
+
+
 
 # Extraction des territoires français pour calcul de Masque Voronoi
-fr <- countries[countries$ADM0_ISO == "FRA",]
+fr <- countries[countries$adm0_a3 == "FRA",]
 fr <- st_cast(fr, "POLYGON")
 fr$id <- seq(from = 1, to = nrow(fr), by =1)
 fr_df <- st_set_geometry(fr, NULL)
@@ -51,8 +56,6 @@ fr_df[4,c(1:2)] <- c("GUA", "Guadeloupe")
 fr_df[5,c(1:2)] <- c("GUA", "Guadeloupe")
 fr_df[6,c(1:2)] <- c("GUA", "Guadeloupe")
 fr_df[7,c(1:2)] <- c("GUA", "Guadeloupe")
-fr_df[19,c(1:2)] <- c("GUA", "Guadeloupe")
-fr_df[20,c(1:2)] <- c("GUA", "Guadeloupe")
 fr_df[8,c(1:2)] <- c("REU", "La Réunion")
 fr_df[9,c(1:2)] <- c("MAY", "Mayotte")
 fr_df[10,c(1:2)] <- c("MAY", "Mayotte")
@@ -64,12 +67,9 @@ fr_df[15,c(1:2)] <- c("MET", "France Métropolitaine")
 fr_df[16,c(1:2)] <- c("MET", "France Métropolitaine")
 fr_df[17,c(1:2)] <- c("MET", "France Métropolitaine")
 fr_df[18,c(1:2)] <- c("MET", "France Métropolitaine")
-fr_df[21,c(1:2)] <- c("MET", "France Métropolitaine")
-fr_df[22, c(1:2)] <- c("CLI", "Clipperton")
 
 fr <- merge(fr[,"id"], fr_df, by = "id")
-fr <- aggregate(fr[,"ADM0_ISO"], by = list(fr$ADM0_ISO), FUN = head, 1)
-
+fr <- aggregate(fr[,"adm0_a3"], by = list(fr$adm0_a3), FUN = head, 1)
 
 
 # Create Voronoi ----
@@ -80,8 +80,8 @@ voronoi <- function(x, var, proj, cent, buffer){
   st_agr(x) = "constant"
   st_agr(c) = "constant"
   out <- st_difference(c, x, sparse = FALSE)
+  st_agr(out) <- "contant"
   if(nrow(out) > 0){
-    st_agr(out) <- "contant"
     out <- st_buffer(out, buffer)
     out <- st_union(x, out)
     out <- aggregate(out, by = list(out[[var]]), FUN = head, 1)
@@ -117,5 +117,25 @@ met <- voronoi(x =  fr[fr$ADM0_ISO == "MET",],
                cent = com[!com$INSEE_DEP %in% c("971", "972", "973", "974", "976"),], 
                var = "ADM0_ISO",  proj = 2154, buffer = 1000)
 
+
+com <- rbind(met, gua, mar, guy, reu, may)
+fra <- st_union(com)
+
+
+com$INSEE_DEP <- NULL
+com$SIREN_EPCI <- NULL
+com <- st_write(com, "input/fr/com.geojson")
+
+
+head(com)
+
+countries <- st_intersection(countries, fra)
+countries <- st_intersection(countries, fra)
+
+countries <- st_transform(countries, 2154)
+mf_map(com[com$INSEE_DEP == "75",])
+mf_map(countries, col = NA, border = "red", add = TRUE)
+
+head(com)
 
 
