@@ -4,6 +4,7 @@
 
 library(sf)
 library(mapsf)
+library(rnaturalearth)
 library(rnaturalearthdata)
 library(rmapshaper)
 remotes::install_github("ropensci/rnaturalearthhires")
@@ -16,7 +17,7 @@ remotes::install_github("ropensci/rnaturalearthhires")
 # com <- st_transform(com, 2154)
 # com$SUPERFICIE <- as.numeric(st_area(com) / 1000000)
 # com <- st_centroid(com)
-# com <- st_write(com, "input/fr/COMMUNE.shp", delete_layer =  TRUE)
+#st_write(com, "input/fr/COMMUNE.shp", delete_layer =  TRUE)
 com <- st_read("input/fr/COMMUNE.shp")
 
 # Arrondissements pour Paris, Lyon, Marseille
@@ -25,8 +26,8 @@ arr <- st_transform(arr, 2154)
 arr$SUPERFICIE <- as.numeric(st_area(arr) / 1000000)
 arr <- merge(arr, com[,c("INSEE_COM", "SIREN_EPCI"), drop = TRUE], by = "INSEE_COM", all.x = TRUE)
 arr$INSEE_COM <- NULL
-arr$INSEE_DEP <- substr(arr$INSEE_COM, 1, 2)
 colnames(arr)[4] <- "INSEE_COM"
+arr$INSEE_DEP <- substr(arr$INSEE_COM, 1, 2)
 arr <- st_centroid(arr)
 st_geometry(arr[arr$INSEE_COM == "75112", ]) <-  st_sfc(st_point(c(655101.1, 6860266)))
 
@@ -100,44 +101,44 @@ voronoi <- function(x, var, proj, cent, buffer){
 }
 
 
-gua <- voronoi(x =  fr[fr$ADM0_ISO == "GUA",], cent = com[com$INSEE_DEP == "971",], 
-               var = "ADM0_ISO", proj = 2154, buffer = 1000)
+gua <- voronoi(x =  fr[fr$adm0_a3 == "GUA",], cent = com[com$INSEE_DEP == "971",], 
+               var = "adm0_a3", proj = 2154, buffer = 1000)
 
-mar <- voronoi(x =  fr[fr$ADM0_ISO == "MAR",], cent = com[com$INSEE_DEP == "972",], 
-               var = "ADM0_ISO", proj = 2154, buffer = 1000)
+mar <- voronoi(x =  fr[fr$adm0_a3 == "MAR",], cent = com[com$INSEE_DEP == "972",], 
+               var = "adm0_a3", proj = 2154, buffer = 1000)
 
-guy <- voronoi(x =  fr[fr$ADM0_ISO == "GUY",], cent = com[com$INSEE_DEP == "973",], 
-               var = "ADM0_ISO", proj = 2154, buffer = 1000)
+guy <- voronoi(x =  fr[fr$adm0_a3 == "GUY",], cent = com[com$INSEE_DEP == "973",], 
+               var = "adm0_a3", proj = 2154, buffer = 1000)
 
-reu <- voronoi(x =  fr[fr$ADM0_ISO == "REU",], cent = com[com$INSEE_DEP == "974",], 
-               var = "ADM0_ISO", proj = 2154, buffer = 1000)
+reu <- voronoi(x =  fr[fr$adm0_a3 == "REU",], cent = com[com$INSEE_DEP == "974",], 
+               var = "adm0_a3", proj = 2154, buffer = 1000)
 
-may <- voronoi(x =  fr[fr$ADM0_ISO == "MAY",], cent = com[com$INSEE_DEP == "976",], 
-               var = "ADM0_ISO", proj = 2154, buffer = 1000)
+may <- voronoi(x =  fr[fr$adm0_a3 == "MAY",], cent = com[com$INSEE_DEP == "976",], 
+               var = "adm0_a3", proj = 2154, buffer = 1000)
 
-met <- voronoi(x =  fr[fr$ADM0_ISO == "MET",], 
+met <- voronoi(x =  fr[fr$adm0_a3 == "MET",], 
                cent = com[!com$INSEE_DEP %in% c("971", "972", "973", "974", "976"),], 
-               var = "ADM0_ISO",  proj = 2154, buffer = 1000)
+               var = "adm0_a3",  proj = 2154, buffer = 1000)
 
 
 com <- rbind(met, gua, mar, guy, reu, may)
-fra <- st_union(com)
-
+com <- st_transform(com, 4326)
 
 com$INSEE_DEP <- NULL
 com$SIREN_EPCI <- NULL
-com <- st_write(com, "input/fr/com.geojson")
+st_write(com, dsn = "output/france/com.geojson")
 
 
-head(com)
+# Rebuild boundaries with new contours
+fra <- st_union(com, by_feature = FALSE)
+inter <- countries[countries$adm0_a3 != 'FRA',]
+inter <- st_difference(inter, fra) %>% st_collection_extract("POLYGON")
+inter <- st_cast(inter, "MULTIPOLYGON")
 
-countries <- st_intersection(countries, fra)
-countries <- st_intersection(countries, fra)
-
-countries <- st_transform(countries, 2154)
-mf_map(com[com$INSEE_DEP == "75",])
-mf_map(countries, col = NA, border = "red", add = TRUE)
-
-head(com)
+fra <- st_as_sf(fra)
+fra$adm0_a3 <- "FR"
+fra$name <- "France"
+st_geometry(fra) <- "geometry"
+countries <- rbind(inter, fra)
 
 
