@@ -1,230 +1,278 @@
 #######################################################
-#  Preparation Voronoi layers and aggregation France
+#  Create insets for France
 ######################################################
 
-# Obj: From Municipalities centroids and generalized small scale Natural Earth layer,
-# Create Voronoi Layer including all territories (buffer area for points falling out of Natural Eearth layer),
-
 library(sf)
+library(mapinsetr)
 library(mapsf)
-library(rnaturalearth)
-library(rnaturalearthdata)
-library(rmapshaper)
-library(readxl)
-#remotes::install_github("ropensci/rnaturalearthhires")
+
+mask <- st_read("input/fr/voronoi/mask.geojson")
+mask <- st_transform(mask, 2154)
 
 
-# 1 - Preparing Municipalities centroids ----
+# Position of the boxes in the layout
+# Get western and Southern point of France Metro
+met <- mask[5,]
+box_area <- 100000 # boxes width / height 
+box_space <- 20000 
 
-#  Extracting centroids from municipal layer 2022 (too large file for github)
-# com <- st_read("input/fr/COMMUNE.shp") # INPUT DATA (not saved) COMMUNE 2022 from IGN
-# com <- st_transform(com, 2154)
-# com$SUPERFICIE <- as.numeric(st_area(com) / 1000000)
-# com <- st_centroid(com)
-#st_write(com, "input/fr/COMMUNE.shp", delete_layer =  TRUE)
-com <- st_read("input/fr/COMMUNE.shp")
+## Guadeloupe
+xmin <- as.numeric(st_bbox(met)[1])
+xmax <- xmin + box_area
+ymax <- 6663290
+ymin <- ymax - box_area
+bb <- c(xmin = xmin, ymin = ymin, xmax = xmax, ymax = ymax)
+boxes <- st_as_sfc(st_bbox(bb, crs = 2154))
+boxes <- st_as_sf(boxes)
+boxes$id <- 1
+boxes$name <- "Guadeloupe"
 
-# Arrondissements for Paris, Lyon, Marseille
-arr <- st_read("input/fr/ARRONDISSEMENT_MUNICIPAL.shp")
-arr <- st_transform(arr, 2154)
-arr$SUPERFICIE <- as.numeric(st_area(arr) / 1000000)
-arr <- merge(arr, com[,c("INSEE_COM", "SIREN_EPCI"), drop = TRUE], by = "INSEE_COM", all.x = TRUE)
-arr$INSEE_COM <- NULL
-colnames(arr)[4] <- "INSEE_COM"
-arr$INSEE_DEP <- substr(arr$INSEE_COM, 1, 2)
-arr <- st_centroid(arr)
-st_geometry(arr[arr$INSEE_COM == "75112", ]) <-  st_sfc(st_point(c(655101.1, 6860266))) # Moving Point to municipal town-hall to have a single territory when aggregating in Paris
+# Martinique
+ymax <- ymin - box_space
+ymin <- ymax - box_area
+bb <- c(xmin = xmin, ymin = ymin, xmax = xmax, ymax = ymax)
+xx <- st_as_sfc(st_bbox(bb, crs = 2154))
+xx <- st_as_sf(xx)
+xx$id <- 2
+xx$name <- "Martinique"
+boxes <- rbind(boxes, xx)
 
-var <- c("INSEE_COM", "NOM", "POPULATION", "SUPERFICIE", "INSEE_DEP", "SIREN_EPCI")
-com <- rbind(com[,var], arr[,var])
+# Guyane
+xmax <- xmax + 50000
+ymax <- ymin - box_space
+ymin <- ymax - box_area - 50000
+bb <- c(xmin = xmin, ymin = ymin, xmax = xmax, ymax = ymax)
+xx <- st_as_sfc(st_bbox(bb, crs = 2154))
+xx <- st_as_sf(xx)
+xx$id <- 3
+xx$name <- "Guyane"
+boxes <- rbind(boxes, xx)
 
-# Delete Paris, Lyon and Marseille from municipal layer
-com <- com[!com$INSEE_COM %in% c("75056", "13055", "69123"),]
-com <- com[order(com$INSEE_COM),]
+mf_map(met)
+mf_map(boxes, add = T)
+
+# Mayotte
+xmin <- 761800
+xmax <- xmin + box_area
+ymin <- as.numeric(st_bbox(met)[2])
+ymax <- ymin + box_area
+bb <- c(xmin = xmin, ymin = ymin, xmax = xmax, ymax = ymax)
+xx <- st_as_sfc(st_bbox(bb, crs = 2154))
+xx <- st_as_sf(xx)
+xx$id <- 4
+xx$name <- "Mayotte"
+boxes <- rbind(boxes, xx)
+
+# Réunion
+xmin <- xmax + box_space
+xmax <- xmin + box_area
+bb <- c(xmin = xmin, ymin = ymin, xmax = xmax, ymax = ymax)
+xx <- st_as_sfc(st_bbox(bb, crs = 2154))
+xx <- st_as_sf(xx)
+xx$id <- 5
+xx$name <- "Réunion"
+boxes <- rbind(boxes, xx)
+
+# Set input parameters of box (target in WGS84, local EPSG)
+boxes$target <- list(c(-62.05, 15.64, -60.99, 16.71), #xmin, ymin, xmax, ymax
+                     c(-61.44, 14.19, -60.6, 15.09),
+                     c(-55.5, 1.8, -50.8, 6),
+                     c(44.8, -13.2, 45.5, -12.5),
+                     c(54.99,-21.61, 56.06,-20.64)
+                     
+)
+
+boxes$epsg_loc <- c(5490, 5490,  2972,  4471, 2975)
+st_geometry(boxes) <- "geometry"
+st_crs(boxes) <- 2154
 
 
-# 2 - Country layer : Natural Earth, small scale, simplified  ----
-countries <- ne_countries(scale = 10, returnclass = "sf")
-countries <- ms_simplify(countries, keep = .4)
-countries <- countries[,c("adm0_a3", "name")]
+# Communes / create insets
+input <- st_read("input/fr/voronoi/com_vor.geojson")
+met <- st_transform(met, 4326)
+inter <- st_intersects(input, met, sparse = FALSE)
+out <- input[inter,]
+out <- st_transform(out, 2154)
 
-# Extract French territories for mask-box purpose
-fr <- countries[countries$adm0_a3 == "FRA",]
-fr <- st_cast(fr, "POLYGON")
-fr$id <- seq(from = 1, to = nrow(fr), by =1)
-fr_df <- st_set_geometry(fr, NULL)
+for (i in 1 : nrow(boxes)){
+  box <- boxes[i,]
+  bb <- as.vector(unlist(box[,"target"]))
+  bb <- c(xmin = bb[1], ymin = bb[2], xmax = bb[3], ymax = bb[4])
+  mask <- st_as_sfc(st_bbox(bb, crs = 4326))
+  inter <- st_intersects(input, mask, sparse = FALSE)
+  x <- input[inter,]
+  mask <- st_transform(mask, box[,"epsg_loc", drop = T][1])
+  x <- st_transform(x, box[,"epsg_loc", drop = T][1])
+  inset <- m_r(x = x, mask = mask,  y = box)
+  out <- rbind(out, inset)
+}
+out <- st_transform(out, 4326)
+st_write(out, "output/france/com.geojson")
 
-fr_df[1,c(1:2)] <- c("GUY", "Guyane")
-fr_df[2,c(1:2)] <-  c("MET", "France Métropolitaine")
-fr_df[3,c(1:2)] <- c("MAR", "Martinique")
-fr_df[4,c(1:2)] <- c("GUA", "Guadeloupe")
-fr_df[5,c(1:2)] <- c("GUA", "Guadeloupe")
-fr_df[6,c(1:2)] <- c("GUA", "Guadeloupe")
-fr_df[7,c(1:2)] <- c("GUA", "Guadeloupe")
-fr_df[8,c(1:2)] <- c("REU", "La Réunion")
-fr_df[9,c(1:2)] <- c("MAY", "Mayotte")
-fr_df[10,c(1:2)] <- c("MAY", "Mayotte")
-fr_df[11,c(1:2)] <- c("MET", "France Métropolitaine")
-fr_df[12,c(1:2)] <- c("MET", "France Métropolitaine")
-fr_df[13,c(1:2)] <- c("MET", "France Métropolitaine")
-fr_df[14,c(1:2)] <- c("MET", "France Métropolitaine")
-fr_df[15,c(1:2)] <- c("MET", "France Métropolitaine")
-fr_df[16,c(1:2)] <- c("MET", "France Métropolitaine")
-fr_df[17,c(1:2)] <- c("MET", "France Métropolitaine")
-fr_df[18,c(1:2)] <- c("MET", "France Métropolitaine")
+# EPCI/ create insets
+input <- st_read("input/fr/voronoi/epci.geojson")
+met <- st_transform(met, 4326)
+inter <- st_intersects(input, met, sparse = FALSE)
+out <- input[inter,]
+out <- st_transform(out, 2154)
 
-fr <- merge(fr[,"id"], fr_df, by = "id")
-fr <- aggregate(fr[,"adm0_a3"], by = list(fr$adm0_a3), FUN = head, 1)
-fr <- st_transform(fr, 4326)
-fr <- st_cast(fr, "MULTIPOLYGON")
-
-st_write(fr, "input/fr/voronoi/mask.geojson")
-
-
-# 3 - Create Voronoi ----
-# When the point falls out of French boundaries, create a buffer around the point
-# and join it to the original layer
-voronoi <- function(x, var, proj, cent, buffer){
-  x <- st_transform(x, proj)
-  c <- st_transform(cent, proj)
-  st_agr(x) = "constant"
-  st_agr(c) = "constant"
-  out <- st_difference(c, x, sparse = FALSE)
-  st_agr(out) <- "contant"
-  if(nrow(out) > 0){
-    out <- st_buffer(out, buffer)
-    out <- st_union(x, out)
-    out <- aggregate(out, by = list(out[[var]]), FUN = head, 1)
-  }
-  else{
-    out <- x
-  }
-  box <- st_as_sfc(st_bbox(x, crs = proj))
-  v <- st_voronoi(st_union(c), box)
-  v <- st_as_sf(st_intersection(st_cast(v), out))
-  v <- st_join(st_sf(v), y = c, join = st_intersects)
-  v <- st_cast(v, "MULTIPOLYGON")
-  return(v)
+for (i in 1 : nrow(boxes)){
+  box <- boxes[i,]
+  bb <- as.vector(unlist(box[,"target"]))
+  bb <- c(xmin = bb[1], ymin = bb[2], xmax = bb[3], ymax = bb[4])
+  mask <- st_as_sfc(st_bbox(bb, crs = 4326))
+  inter <- st_intersects(input, mask, sparse = FALSE)
+  x <- input[inter,]
+  mask <- st_transform(mask, box[,"epsg_loc", drop = T][1])
+  x <- st_transform(x, box[,"epsg_loc", drop = T][1])
+  inset <- m_r(x = x, mask = mask,  y = box)
+  out <- rbind(out, inset)
 }
 
-# Voronoi creation for outermost territories and France
-gua <- voronoi(x =  fr[fr$adm0_a3 == "GUA",], cent = com[com$INSEE_DEP == "971",], 
-               var = "adm0_a3", proj = 2154, buffer = 1000)
-mar <- voronoi(x =  fr[fr$adm0_a3 == "MAR",], cent = com[com$INSEE_DEP == "972",], 
-               var = "adm0_a3", proj = 2154, buffer = 1000)
-guy <- voronoi(x =  fr[fr$adm0_a3 == "GUY",], cent = com[com$INSEE_DEP == "973",], 
-               var = "adm0_a3", proj = 2154, buffer = 1000)
-reu <- voronoi(x =  fr[fr$adm0_a3 == "REU",], cent = com[com$INSEE_DEP == "974",], 
-               var = "adm0_a3", proj = 2154, buffer = 1000)
-may <- voronoi(x =  fr[fr$adm0_a3 == "MAY",], cent = com[com$INSEE_DEP == "976",], 
-               var = "adm0_a3", proj = 2154, buffer = 1000)
-met <- voronoi(x =  fr[fr$adm0_a3 == "MET",], 
-               cent = com[!com$INSEE_DEP %in% c("971", "972", "973", "974", "976"),], 
-               var = "adm0_a3",  proj = 2154, buffer = 1000)
-com <- rbind(met, gua, mar, guy, reu, may) # Attach all layers
-com <- st_transform(com, 4326)
-com$INSEE_DEP <- NULL
-com$SIREN_EPCI <- NULL
-st_write(com, dsn = "input/fr/voronoi/com_vor.geojson")
+out <- st_transform(out, 4326)
+st_write(out, "output/france/epci.geojson")
 
 
-# 4 - Rebuild national boundaries with the union of previous layers, and build neighbouring countries layer 
-fra <- st_union(com, by_feature = FALSE)
-inter <- countries[countries$adm0_a3 != 'FRA',]
-inter <- st_difference(inter, fra) %>% st_collection_extract("POLYGON")
-inter <- st_cast(inter, "MULTIPOLYGON")
+# Urban areas / create insets
+input <- st_read("input/fr/voronoi/aav.geojson")
+met <- st_transform(met, 4326)
+inter <- st_intersects(input, met, sparse = FALSE)
+out <- input[inter,]
+out <- st_transform(out, 2154)
 
-fra <- st_as_sf(fra)
-fra$adm0_a3 <- "FRA"
-fra$name <- "France"
-st_geometry(fra) <- "geometry"
-countries <- rbind(inter, fra)
-st_write(countries, dsn = "input/fr/voronoi/countries.geojson")
+for (i in 1 : nrow(boxes)){
+  box <- boxes[i,]
+  bb <- as.vector(unlist(box[,"target"]))
+  bb <- c(xmin = bb[1], ymin = bb[2], xmax = bb[3], ymax = bb[4])
+  mask <- st_as_sfc(st_bbox(bb, crs = 4326))
+  inter <- st_intersects(input, mask, sparse = FALSE)
+  x <- input[inter,]
+  mask <- st_transform(mask, box[,"epsg_loc", drop = T][1])
+  x <- st_transform(x, box[,"epsg_loc", drop = T][1])
+  inset <- m_r(x = x, mask = mask,  y = box)
+  out <- rbind(out, inset)
+}
 
-# Select countries to appear in the map template
-sel <- c("BE", "LU", "DE", "NED", "CHE", "ITA", "ESP", "GBR", "JEY", "GGY", "IRL",
-         "AUT", "CZE", "PRT", "SVN", "DMA", "LCA", "GUY", "SUR", "BRA", "FRA")
-
-sel <- countries[countries$adm0_a3 %in% sel,]
-st_write(sel, dsn = "input/fr/neighbors.geojson")
-
-
-# 5 - Aggregate EPCI, ZEMP, UU, REG, EPCI, DEP ----
-zon <- data.frame(read_xlsx("input/fr/table-appartenance-geo-communes-22_v2022-09-27.xlsx",
-                            skip = 5, sheet = "COM")) 
-zon2 <- data.frame(read_xlsx("input/fr/table-appartenance-geo-communes-22_v2022-09-27.xlsx",
-                            skip = 5, sheet = "ARM")) 
-
-sel <- c("CODGEO", "DEP", "REG", "EPCI", "ZE2020", "AAV2020", "TAAV2017")
-zon <- rbind(zon[,sel], zon2[,sel])
-
-zon_name <- data.frame(read_xlsx("input/fr/table-appartenance-geo-communes-22_v2022-09-27.xlsx",
-                                 skip = 5, sheet = "Zones_supra_communales")) 
+out <- st_transform(out, 4326)
+st_write(out, "output/france/aav.geojson")
 
 
-com <- merge(com, zon, by.x = "INSEE_COM", by.y = "CODGEO", all.x = TRUE)
+# Employment areas
+input <- st_read("input/fr/voronoi/zemp.geojson")
+met <- st_transform(met, 4326)
+inter <- st_intersects(input, met, sparse = FALSE)
+out <- input[inter,]
+out <- st_transform(out, 2154)
+
+for (i in 1 : nrow(boxes)){
+  box <- boxes[i,]
+  bb <- as.vector(unlist(box[,"target"]))
+  bb <- c(xmin = bb[1], ymin = bb[2], xmax = bb[3], ymax = bb[4])
+  mask <- st_as_sfc(st_bbox(bb, crs = 4326))
+  inter <- st_intersects(input, mask, sparse = FALSE)
+  x <- input[inter,]
+  mask <- st_transform(mask, box[,"epsg_loc", drop = T][1])
+  x <- st_transform(x, box[,"epsg_loc", drop = T][1])
+  inset <- m_r(x = x, mask = mask,  y = box)
+  out <- rbind(out, inset)
+}
+
+out <- st_transform(out, 4326)
+st_write(out, "output/france/zemp.geojson")
+
+# Departments
+input <- st_read("input/fr/voronoi/dep.geojson")
+met <- st_transform(met, 4326)
+inter <- st_intersects(input, met, sparse = FALSE)
+out <- input[inter,]
+out <- st_transform(out, 2154)
+
+for (i in 1 : nrow(boxes)){
+  box <- boxes[i,]
+  bb <- as.vector(unlist(box[,"target"]))
+  bb <- c(xmin = bb[1], ymin = bb[2], xmax = bb[3], ymax = bb[4])
+  mask <- st_as_sfc(st_bbox(bb, crs = 4326))
+  inter <- st_intersects(input, mask, sparse = FALSE)
+  x <- input[inter,]
+  mask <- st_transform(mask, box[,"epsg_loc", drop = T][1])
+  x <- st_transform(x, box[,"epsg_loc", drop = T][1])
+  inset <- m_r(x = x, mask = mask,  y = box)
+  out <- rbind(out, inset)
+}
+
+out <- st_transform(out, 4326)
+st_write(out, "output/france/dep.geojson")
+
+# Regions
+input <- st_read("input/fr/voronoi/reg.geojson")
+met <- st_transform(met, 4326)
+inter <- st_intersects(input, met, sparse = FALSE)
+out <- input[inter,]
+out <- st_transform(out, 2154)
+
+for (i in 1 : nrow(boxes)){
+  box <- boxes[i,]
+  bb <- as.vector(unlist(box[,"target"]))
+  bb <- c(xmin = bb[1], ymin = bb[2], xmax = bb[3], ymax = bb[4])
+  mask <- st_as_sfc(st_bbox(bb, crs = 4326))
+  inter <- st_intersects(input, mask, sparse = FALSE)
+  x <- input[inter,]
+  mask <- st_transform(mask, box[,"epsg_loc", drop = T][1])
+  x <- st_transform(x, box[,"epsg_loc", drop = T][1])
+  inset <- m_r(x = x, mask = mask,  y = box)
+  out <- rbind(out, inset)
+}
+
+out <- st_transform(out, 4326)
+st_write(out, "output/france/reg.geojson")
 
 
-# Départements
-dep <- aggregate(com[,c("POPULATION", "SUPERFICIE")],
-                 by = list(com$DEP),
-                 FUN = sum)
-colnames(dep)[1] <- "CODGEO"
-zon <- zon_name[zon_name$NIVGEO == "DEP",]
-dep <- merge(dep, zon[,c("CODGEO", "LIBGEO")], by = "CODGEO",
-             all.x = TRUE)
-dep <- st_cast(dep, "MULTIPOLYGON")
-st_write(dep, dsn = "input/fr/voronoi/dep.geojson")
+# Neighbourhood / work in progress
+input <- st_read("input/fr/voronoi/countries.geojson")
+out <- st_read("input/fr/voronoi/neighbors.geojson")
+out <- st_transform(out, 2154)
+input <- st_transform(input, 2154)
+mf_map(input)
 
-# Régions
-reg <- aggregate(com[,c("POPULATION", "SUPERFICIE")],
-                 by = list(com$REG),
-                 FUN = sum)
-colnames(reg)[1] <- "CODGEO"
-zon <- zon_name[zon_name$NIVGEO == "REG",]
-reg <- merge(reg, zon[,c("CODGEO", "LIBGEO")], by = "CODGEO",
-             all.x = TRUE)
-reg <- st_cast(reg, "MULTIPOLYGON")
-st_write(reg, dsn = "input/fr/voronoi/reg.geojson")
+mf_map(out)
+for (i in 1 : nrow(boxes)){
+  box <- boxes[i,]
+  bb <- as.vector(unlist(box[,"target"]))
+  bb <- c(xmin = bb[1], ymin = bb[2], xmax = bb[3], ymax = bb[4])
+  mask <- st_as_sfc(st_bbox(bb, crs = 4326))
+  mask_large <- st_transform(mask, 2154)
+  mask_large <- st_as_sfc(st_bbox(mask_large + c(-500000,-500000,500000,500000), crs = 2154))
+  st_crs(mask_large) <- 2154
+  x <- suppressWarnings(st_intersection(input, mask_large))
+  x <- st_cast(x, "MULTIPOLYGON")
+  mask <- st_transform(mask, box[,"epsg_loc", drop = T][1])
+  x <- st_transform(x, box[,"epsg_loc", drop = T][1])
+  inset <- m_r(x = x, mask = mask,  y = box)
+  if(nrow(inset) > 0){
+    country_box <- rbind(country_box, inset)
+  }
+  out <- rbind(out, inset)
+}
 
+# mf_map(out)
+# mf_map(out)
+# 
+# 
+# for (i in 1 : nrow(boxes)){
+#   box <- boxes[i,]
+#   bb <- as.vector(unlist(box[,"target"]))
+#   bb <- c(xmin = bb[1], ymin = bb[2], xmax = bb[3], ymax = bb[4])
+#   mask <- st_as_sfc(st_bbox(bb, crs = 4326))
+#   mask_large <- st_transform(mask, 3035)
+#   mask_large <- st_as_sfc(st_bbox(mask_large + c(-500000,-500000,500000,500000), crs = 3035))
+#   st_crs(mask_large) <- 3035
+#   input <- suppressWarnings(st_intersection(input_countries, mask_large))
+#   input <- st_cast(input, "MULTIPOLYGON")
+#   mask <- st_transform(mask, box[,"epsg_loc", drop = T][1])
+#   input <- st_transform(input, box[,"epsg_loc", drop = T][1])
+#   inset <- m_r(x = input, mask = mask,  y = box)
+#   if(nrow(inset) > 0){
+#     country_box <- rbind(country_box, inset)
+#   }
+# }
 
-# EPCI
-epci <- aggregate(com[,c("POPULATION", "SUPERFICIE")],
-                 by = list(com$EPCI),
-                 FUN = sum)
-colnames(epci)[1] <- "CODGEO"
-zon <- zon_name[zon_name$NIVGEO == "EPCI",]
-epci <- merge(epci, zon[,c("CODGEO", "LIBGEO")], by = "CODGEO",
-             all.x = TRUE)
-epci <- st_cast(epci, "MULTIPOLYGON")
-st_write(epci, dsn = "input/fr/voronoi/epci.geojson")
-
-# ZEMP
-zemp <- aggregate(com[,c("POPULATION", "SUPERFICIE")],
-                  by = list(com$ZE2020),
-                  FUN = sum)
-colnames(zemp)[1] <- "CODGEO"
-zon <- zon_name[zon_name$NIVGEO == "ZE2020",]
-zemp <- merge(zemp, zon[,c("CODGEO", "LIBGEO")], by = "CODGEO",
-              all.x = TRUE)
-zemp <- st_cast(zemp, "MULTIPOLYGON")
-st_write(zemp, dsn = "input/fr/voronoi/zemp.geojson")
-
-# AAV
-com_urb <- com[com$AAV2020 != "000",]
-aav <- aggregate(com_urb[,c("POPULATION", "SUPERFICIE")],
-                by = list(com_urb$AAV2020),
-                FUN = sum)
-colnames(aav)[1] <- "CODGEO"
-zon <- zon_name[zon_name$NIVGEO == "AAV2020",]
-aav <- merge(aav, zon[,c("CODGEO", "LIBGEO")], by = "CODGEO",
-              all.x = TRUE)
-aav <- st_cast(aav, "MULTIPOLYGON")
-
-zon <- aggregate(com_urb[,c("AAV2020", "TAAV2017")],
-                  by = list(com_urb$AAV2020),
-                  FUN = head, 1)
-zon <- st_set_geometry(zon, NULL)
-aav <- merge(aav, zon[,c("AAV2020", "TAAV2017")], by.x = "CODGEO", by.y = "AAV2020",
-            all.x = TRUE)
-st_write(aav, dsn = "input/fr/voronoi/aav.geojson")
