@@ -12,10 +12,12 @@ remotes::install_github("ropensci/rnaturalearthhires")
 # 1 - Source 1 : Municipalités (centroides) ----
 
 #  Extraction centroides et labels départements
+# com <- st_read("input/fr/COMMUNE.shp") # INPUT DATA (not saved) COMMUNE 2022 from IGN
+# com <- st_transform(com, 2154)
+# com$SUPERFICIE <- as.numeric(st_area(com) / 1000000)
+# com <- st_centroid(com)
+# com <- st_write(com, "input/fr/COMMUNE.shp", delete_layer =  TRUE)
 com <- st_read("input/fr/COMMUNE.shp")
-com <- st_transform(com, 2154)
-com$SUPERFICIE <- as.numeric(st_area(com) / 1000000)
-com <- st_centroid(com)
 
 # Arrondissements pour Paris, Lyon, Marseille
 arr <- st_read("input/fr/ARRONDISSEMENT_MUNICIPAL.shp")
@@ -23,10 +25,10 @@ arr <- st_transform(arr, 2154)
 arr$SUPERFICIE <- as.numeric(st_area(arr) / 1000000)
 arr <- merge(arr, com[,c("INSEE_COM", "SIREN_EPCI"), drop = TRUE], by = "INSEE_COM", all.x = TRUE)
 arr$INSEE_COM <- NULL
+arr$INSEE_DEP <- substr(arr$INSEE_COM, 1, 2)
 colnames(arr)[4] <- "INSEE_COM"
 arr <- st_centroid(arr)
-arr$INSEE_DEP <- substr(arr$INSEE_COM, 1, 2)
-
+st_geometry(arr[arr$INSEE_COM == "75112", ]) <-  st_sfc(st_point(c(655101.1, 6860266)))
 
 var <- c("INSEE_COM", "NOM", "POPULATION", "SUPERFICIE", "INSEE_DEP", "SIREN_EPCI")
 com <- rbind(com[,var], arr[,var])
