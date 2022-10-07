@@ -15,12 +15,12 @@ mask <- st_transform(mask, 2154)
 # Get western and Southern point of France Metro
 met <- mask[5,]
 box_area <- 100000 # boxes width / height 
-box_space <- 20000 
+box_space <- 15000 
 
 ## Guadeloupe
 xmin <- as.numeric(st_bbox(met)[1])
 xmax <- xmin + box_area
-ymax <- 6663290
+ymax <- 6680000
 ymin <- ymax - box_area
 bb <- c(xmin = xmin, ymin = ymin, xmax = xmax, ymax = ymax)
 boxes <- st_as_sfc(st_bbox(bb, crs = 2154))
@@ -83,7 +83,6 @@ boxes$target <- list(c(-62.05, 15.64, -60.99, 16.71), #xmin, ymin, xmax, ymax
 boxes$epsg_loc <- c(5490, 5490,  2972,  4471, 2975)
 st_geometry(boxes) <- "geometry"
 st_crs(boxes) <- 2154
-
 
 # Communes / create insets
 input <- st_read("input/fr/voronoi/com_vor.geojson")
@@ -260,11 +259,11 @@ country_box <- st_transform(country_box, 4326)
 borders_box <- st_transform(borders_box, 4326)
 boxes <- st_transform(boxes, 4326)
 
-st_write(country_box, "output/france/country_box.shp")
+st_write(country_box, "output/france/country_box.geojson")
 st_write(borders_box, "output/france/borders_box.geojson")
 
 boxes$target <- NULL
-st_write(boxes, "output/france/boxes.geojson")
+st_write(boxes, "output/france/boxes.shp")
 # Facteurs d'agrandissement / réduction
 # Guadeloupe 0.84
 # Martinique 0.99
