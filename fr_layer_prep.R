@@ -146,7 +146,7 @@ sel <- c("BEL", "LUX", "DEU", "NLD", "CHE", "ITA", "ESP", "GBR", "JEY", "GGY", "
          "AUT", "CZE", "PRT", "SVN", "DMA", "LCA", "GUY", "SUR", "BRA", "FRA")
 
 sel <- countries[countries$adm0_a3 %in% sel,]
-st_write(sel, dsn = "input/fr/neighbors.geojson")
+st_write(sel, dsn = "input/fr/voronoi/neighbors.geojson")
 
 
 # 5 - Aggregate EPCI, ZEMP, UU, REG, EPCI, DEP ----
