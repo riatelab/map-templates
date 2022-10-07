@@ -48,9 +48,6 @@ xx$id <- 3
 xx$name <- "Guyane"
 boxes <- rbind(boxes, xx)
 
-mf_map(met)
-mf_map(boxes, add = T)
-
 # Mayotte
 xmin <- 761800
 xmax <- xmin + box_area
@@ -253,6 +250,15 @@ for (i in 1 : nrow(boxes)){
   }
   out <- rbind(out, inset)
 }
+
+
+# Facteurs d'agrandissement / réduction
+# Guadeloupe 0.84
+# Martinique 0.99
+# Guyane 0.28
+# Mayotte 1.29
+# Réunion 0.89
+
 
 # mf_map(out)
 # mf_map(out)

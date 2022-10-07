@@ -142,7 +142,7 @@ countries <- rbind(inter, fra)
 st_write(countries, dsn = "input/fr/voronoi/countries.geojson")
 
 # Select countries to appear in the map template
-sel <- c("BE", "LU", "DE", "NED", "CHE", "ITA", "ESP", "GBR", "JEY", "GGY", "IRL",
+sel <- c("BEL", "LUX", "DEU", "NLD", "CHE", "ITA", "ESP", "GBR", "JEY", "GGY", "IRL",
          "AUT", "CZE", "PRT", "SVN", "DMA", "LCA", "GUY", "SUR", "BRA", "FRA")
 
 sel <- countries[countries$adm0_a3 %in% sel,]
