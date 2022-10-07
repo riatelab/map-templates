@@ -5,7 +5,7 @@ R programmes to build map templates for Magrit (with boxes for overseas and oute
 
 ## Template Europe
 
-Template created with sf, giscoR, mapinsetr R libraries.
+Template created with sf, giscoR, mapinsetr R libraries ([eu_parameters.R](https://github.com/riatelab/map-templates/blob/main/eu_parameters.R) and [eu_template.R](https://github.com/riatelab/map-templates/blob/main/eu_template.R))
 Copyright ©EuroGeographics for the administrative boundaries ; (cc) RIATE for map template.
 
 Overseas territories (Canarias, Madeire, Açores, Guadeloupe, Martinique, Réunion, Guyane and Mayotte) are reprojected, moved and resized to appear on the main map in specific boxes. 
@@ -49,7 +49,7 @@ It is possible to enlarge the map frame if needed (if the legend overlaps with t
 
 ## Template France
 
-Template created with sf, mapinsetr, rnaturalearth, rnaturalearthdata, rmapshaper and readxl R libraries. 
+Template created with sf, mapinsetr, rnaturalearth, rnaturalearthdata, rmapshaper and readxl R libraries ([fr_layer_prep.R](https://github.com/riatelab/map-templates/blob/main/fr_layer_prep.R) and [fr_template.R](https://github.com/riatelab/map-templates/blob/main/fr_layer_prep.R))
 
 Data sources : Natural Earth, IGN
 
