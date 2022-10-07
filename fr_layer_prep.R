@@ -127,26 +127,46 @@ com$INSEE_DEP <- NULL
 com$SIREN_EPCI <- NULL
 st_write(com, dsn = "input/fr/voronoi/com_vor.geojson")
 
-
 # 4 - Rebuild national boundaries with the union of previous layers, and build neighbouring countries layer 
 fra <- st_union(com, by_feature = FALSE)
 inter <- countries[countries$adm0_a3 != 'FRA',]
 inter <- st_difference(inter, fra) %>% st_collection_extract("POLYGON")
 inter <- st_cast(inter, "MULTIPOLYGON")
-
 fra <- st_as_sf(fra)
 fra$adm0_a3 <- "FRA"
 fra$name <- "France"
 st_geometry(fra) <- "geometry"
 countries <- rbind(inter, fra)
-st_write(countries, dsn = "input/fr/voronoi/countries.geojson")
 
 # Select countries to appear in the map template
-sel <- c("BEL", "LUX", "DEU", "NLD", "CHE", "ITA", "ESP", "GBR", "JEY", "GGY", "IRL",
-         "AUT", "CZE", "PRT", "SVN", "DMA", "LCA", "GUY", "SUR", "BRA", "FRA")
+sel <- c("BEL", "LUX", "DEU", "NLD", "CHE", "ITA", "ESP", "GBR", "JEY", "GGY", "IRL", "LIE",
+         "AUT", "CZE", "PRT", "SVN", "DMA", "LCA", "GUY", "SUR", "BRA", "FRA", "AND", "SMR")
 
 sel <- countries[countries$adm0_a3 %in% sel,]
-st_write(sel, dsn = "input/fr/voronoi/neighbors.geojson")
+st_crs(sel) <- 4326
+st_write(sel, "input/fr/voronoi/neighbors.shp", delete_layer = TRUE) 
+
+# Keep only relevant units according to template
+bb <- c(xmin = -605000, ymin = 4288000, xmax = 2909000, ymax = 8008000)
+mask <- st_as_sfc(st_bbox(bb, crs = 2154))
+head(sel)
+# Make country layer pretty
+countries <- st_cast(sel, "POLYGON")
+countries <- st_transform(countries, 2154)
+
+inter <- st_intersects(countries, mask, sparse = FALSE)
+countries <- countries[inter,] 
+head(countries)
+countries <- aggregate(countries, by = list(countries$adm0_a3),
+                       FUN = head, 1)
+countries <- st_cast(countries, "MULTIPOLYGON")
+borders <- getBorders(countries)
+countries <- st_transform(countries, 4326)
+st_crs(borders) <- 2154
+borders <- st_transform(borders, 4326)
+countries <- countries[,-1]
+st_write(countries, "output/france/countries.shp", delete_layer = TRUE) # export geojson loose
+st_write(borders, "output/france/borders.geojson")
 
 
 # 5 - Aggregate EPCI, ZEMP, UU, REG, EPCI, DEP ----

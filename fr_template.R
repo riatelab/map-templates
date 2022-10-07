@@ -224,14 +224,12 @@ for (i in 1 : nrow(boxes)){
 out <- st_transform(out, 4326)
 st_write(out, "output/france/reg.geojson")
 
-
-# Neighbourhood / work in progress
-countries <- st_read("input/fr/voronoi/neighbors.geojson")
+# Neighboring country layer
+countries <- st_read("input/fr/voronoi/neighbors.shp")
 countries <- st_transform(countries, 2154)
 country_box <- st_sf(st_sfc())
 st_crs(country_box) <- st_crs(2154)
 
-mf_map(country_box)
 for (i in 1 : nrow(boxes)){
   box <- boxes[i,]
   bb <- as.vector(unlist(box[,"target"]))
@@ -255,53 +253,21 @@ country_box <- aggregate(country_box,
                          FUN = head, 1)
 
 # Extraction borders
-borders <- getBorders(countries)
-st_crs(borders) <- 2154
-bb <- c(xmin = -605000, ymin = 4288000, xmax = 2909000, ymax = 8008000)
-mask <- st_as_sfc(st_bbox(bb, crs = 2154))
-borders <- st_intersection(borders, mask)
-
 borders_box <- getBorders(country_box)
 st_crs(borders_box) <- 2154
-
+country_box <- country_box[,-1]
 country_box <- st_transform(country_box, 4326)
-countries <- st_transform(countries, 4326)
-borders <- st_transform(borders, 4326)
 borders_box <- st_transform(borders_box, 4326)
+boxes <- st_transform(boxes, 4326)
 
-st_write(country_box, "output/france/country_box.geojson")
-st_write(countries, "output/france/countries.geojson")
-st_write(borders, "output/france/borders.geojson")
+st_write(country_box, "output/france/country_box.shp")
 st_write(borders_box, "output/france/borders_box.geojson")
 
-
+boxes$target <- NULL
+st_write(boxes, "output/france/boxes.geojson")
 # Facteurs d'agrandissement / réduction
 # Guadeloupe 0.84
 # Martinique 0.99
 # Guyane 0.28
 # Mayotte 1.29
 # Réunion 0.89
-
-
-# mf_map(out)
-# mf_map(out)
-# 
-# 
-# for (i in 1 : nrow(boxes)){
-#   box <- boxes[i,]
-#   bb <- as.vector(unlist(box[,"target"]))
-#   bb <- c(xmin = bb[1], ymin = bb[2], xmax = bb[3], ymax = bb[4])
-#   mask <- st_as_sfc(st_bbox(bb, crs = 4326))
-#   mask_large <- st_transform(mask, 3035)
-#   mask_large <- st_as_sfc(st_bbox(mask_large + c(-500000,-500000,500000,500000), crs = 3035))
-#   st_crs(mask_large) <- 3035
-#   input <- suppressWarnings(st_intersection(input_countries, mask_large))
-#   input <- st_cast(input, "MULTIPOLYGON")
-#   mask <- st_transform(mask, box[,"epsg_loc", drop = T][1])
-#   input <- st_transform(input, box[,"epsg_loc", drop = T][1])
-#   inset <- m_r(x = input, mask = mask,  y = box)
-#   if(nrow(inset) > 0){
-#     country_box <- rbind(country_box, inset)
-#   }
-# }
-
