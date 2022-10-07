@@ -5,6 +5,7 @@
 library(sf)
 library(mapinsetr)
 library(mapsf)
+source('utils.R')
 
 mask <- st_read("input/fr/voronoi/mask.geojson")
 mask <- st_transform(mask, 2154)
@@ -225,13 +226,12 @@ st_write(out, "output/france/reg.geojson")
 
 
 # Neighbourhood / work in progress
-input <- st_read("input/fr/voronoi/countries.geojson")
-out <- st_read("input/fr/voronoi/neighbors.geojson")
-out <- st_transform(out, 2154)
-input <- st_transform(input, 2154)
-mf_map(input)
+countries <- st_read("input/fr/voronoi/neighbors.geojson")
+countries <- st_transform(countries, 2154)
+country_box <- st_sf(st_sfc())
+st_crs(country_box) <- st_crs(2154)
 
-mf_map(out)
+mf_map(country_box)
 for (i in 1 : nrow(boxes)){
   box <- boxes[i,]
   bb <- as.vector(unlist(box[,"target"]))
@@ -240,7 +240,7 @@ for (i in 1 : nrow(boxes)){
   mask_large <- st_transform(mask, 2154)
   mask_large <- st_as_sfc(st_bbox(mask_large + c(-500000,-500000,500000,500000), crs = 2154))
   st_crs(mask_large) <- 2154
-  x <- suppressWarnings(st_intersection(input, mask_large))
+  x <- suppressWarnings(st_intersection(countries, mask_large))
   x <- st_cast(x, "MULTIPOLYGON")
   mask <- st_transform(mask, box[,"epsg_loc", drop = T][1])
   x <- st_transform(x, box[,"epsg_loc", drop = T][1])
@@ -248,8 +248,31 @@ for (i in 1 : nrow(boxes)){
   if(nrow(inset) > 0){
     country_box <- rbind(country_box, inset)
   }
-  out <- rbind(out, inset)
+  country_box <- rbind(country_box, inset)
 }
+country_box <- aggregate(country_box, 
+                         by = list(country_box$adm0_a3),
+                         FUN = head, 1)
+
+# Extraction borders
+borders <- getBorders(countries)
+st_crs(borders) <- 2154
+bb <- c(xmin = -605000, ymin = 4288000, xmax = 2909000, ymax = 8008000)
+mask <- st_as_sfc(st_bbox(bb, crs = 2154))
+borders <- st_intersection(borders, mask)
+
+borders_box <- getBorders(country_box)
+st_crs(borders_box) <- 2154
+
+country_box <- st_transform(country_box, 4326)
+countries <- st_transform(countries, 4326)
+borders <- st_transform(borders, 4326)
+borders_box <- st_transform(borders_box, 4326)
+
+st_write(country_box, "output/france/country_box.geojson")
+st_write(countries, "output/france/countries.geojson")
+st_write(borders, "output/france/borders.geojson")
+st_write(borders_box, "output/france/borders_box.geojson")
 
 
 # Facteurs d'agrandissement / réduction
